@@ -3,9 +3,9 @@
     <div>
       <h1 class="hero-title">发布问卷</h1>
       <p class="muted">
-        将消耗
+        每次发布固定消耗
         <strong>{{ cost }}</strong>
-        积分（目标份数 × 每份奖励）。当前余额：{{ points }}
+        积分。当前余额：{{ points }}
       </p>
     </div>
     <div class="field">
@@ -56,7 +56,7 @@ const loading = ref(false)
 const error = ref('')
 
 const points = computed(() => userStore.userInfo?.points ?? 0)
-const cost = computed(() => Math.max(0, Number(targetCount.value) || 0) * Math.max(0, Number(rewardPoints.value) || 0))
+const cost = 5
 
 onMounted(async () => {
   try {

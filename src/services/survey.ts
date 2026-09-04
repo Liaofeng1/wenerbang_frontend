@@ -1,6 +1,7 @@
 import { API_COMPLETIONS_MINE, API_SURVEYS, API_SURVEYS_MINE } from '@/constants/api'
 import { request } from '@/services/request'
 import type { Completion, Survey } from '@/types/api'
+import type { SurveySession } from '@/types/session'
 
 export function listSurveys() {
   return request<Survey[]>({ url: API_SURVEYS })
@@ -21,6 +22,33 @@ export function createSurvey(payload: {
     url: API_SURVEYS,
     method: 'POST',
     data: payload,
+  })
+}
+
+export function startSurvey(id: number) {
+  return request<SurveySession>({
+    url: `${API_SURVEYS}/${id}/start`,
+    method: 'POST',
+  })
+}
+
+export function leaveSurvey(id: number) {
+  return request<SurveySession>({
+    url: `${API_SURVEYS}/${id}/leave`,
+    method: 'POST',
+  })
+}
+
+export function returnSurvey(id: number) {
+  return request<SurveySession>({
+    url: `${API_SURVEYS}/${id}/return`,
+    method: 'POST',
+  })
+}
+
+export function getSurveySession(id: number) {
+  return request<SurveySession>({
+    url: `${API_SURVEYS}/${id}/session`,
   })
 }
 

@@ -3,7 +3,7 @@
     <div class="card auth-card stack">
       <div>
         <h1 class="hero-title">注册问而帮</h1>
-        <p class="muted">新用户赠送 20 积分，刚好够发一份小问卷</p>
+        <p class="muted">新用户赠送 20 积分，每次发布问卷消耗 5 积分</p>
       </div>
       <div class="field">
         <label>用户名</label>

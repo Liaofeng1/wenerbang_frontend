@@ -31,6 +31,7 @@ export interface Completion {
   survey_id: number
   user_id: number
   points_earned: number
+  away_seconds?: number
   created_at?: string
   survey_title?: string
 }
