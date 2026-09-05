@@ -1,6 +1,6 @@
 import { API_COMPLETIONS_MINE, API_SURVEYS, API_SURVEYS_MINE } from '@/constants/api'
 import { request } from '@/services/request'
-import type { Completion, Survey, SurveyStats } from '@/types/api'
+import type { Completion, ReportResult, Survey, SurveyStats } from '@/types/api'
 import type { SurveySession } from '@/types/session'
 
 export function listSurveys() {
@@ -28,6 +28,7 @@ export function createSurvey(payload: {
   target_genders?: string[]
   target_regions?: string[]
   target_city_tiers?: string[]
+  shelf_days: number
 }) {
   return request<Survey>({
     url: API_SURVEYS,
@@ -78,4 +79,12 @@ export function completeSurvey(id: number) {
 
 export function listMyCompletions() {
   return request<Completion[]>({ url: API_COMPLETIONS_MINE })
+}
+
+export function reportFiller(surveyId: number, userId: number) {
+  return request<ReportResult>({
+    url: `${API_SURVEYS}/${surveyId}/report`,
+    method: 'POST',
+    data: { user_id: userId },
+  })
 }

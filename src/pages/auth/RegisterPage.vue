@@ -25,9 +25,9 @@
         <input v-model="school" placeholder="默认：中国人民大学" />
       </div>
       <div class="field">
-        <label>专业（学科门类，可选）</label>
+        <label>专业（学科门类，必选）</label>
         <select v-model="major">
-          <option value="">不填</option>
+          <option value="" disabled>请选择学科门类</option>
           <option v-for="d in disciplines" :key="d" :value="d">{{ d }}</option>
         </select>
         <p class="hint">与分类投放一致：哲学、经济学、法学…共 13 个门类</p>
@@ -125,6 +125,10 @@ onMounted(() => {
 
 async function onSubmit() {
   error.value = ''
+  if (!major.value) {
+    error.value = '请选择专业学科门类'
+    return
+  }
   if (!gender.value || !region.value || !cityTier.value) {
     error.value = '请完善性别、南北方与城市线级'
     return

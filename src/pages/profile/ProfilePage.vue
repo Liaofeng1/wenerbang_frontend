@@ -21,6 +21,54 @@
         <div class="points">{{ user?.points ?? '-' }}</div>
       </div>
 
+      <div v-if="banActive" class="mod-banner ban">
+        <strong>账号已封禁</strong>
+        <p>因被有效举报满 3 次，已封禁至 {{ formatBan(user?.banned_until) }}。封禁期间不能发问卷、不能填问卷；到期后自动解封并清零警告。</p>
+      </div>
+      <div v-else-if="(user?.warn_count || 0) > 0" class="mod-banner warn">
+        <strong>你已被有效举报</strong>
+        <p>
+          发布者举报你乱填，且系统核验填写时长远低于或远高于参考平均，已记警告
+          <b>{{ user?.warn_count }}</b>/3。
+          再被有效举报 {{ Math.max(0, 3 - (user?.warn_count || 0)) }} 次将封禁两周。
+        </p>
+        <p class="mod-note">时长正常的举报无效，不会增加警告。</p>
+      </div>
+
+      <div class="level-box stack">
+        <div class="row" style="justify-content: space-between; align-items: baseline">
+          <div>
+            <strong>Lv.{{ user?.level ?? 1 }} {{ user?.level_title || '问卷萌新' }}</strong>
+            <p class="muted" style="margin: 4px 0 0">经验 {{ user?.exp ?? 0 }}
+              <template v-if="!user?.level_at_max"> · 距下一级还差 {{ user?.exp_to_next ?? '-' }}</template>
+              <template v-else> · 已满级</template>
+            </p>
+          </div>
+          <button
+            class="btn secondary"
+            type="button"
+            :disabled="checkingIn || user?.checked_in_today"
+            @click="onCheckIn"
+          >
+            {{
+              checkingIn
+                ? '签到中…'
+                : user?.checked_in_today
+                  ? '今日已签到'
+                  : '每日签到 +5经验 / +10积分'
+            }}
+          </button>
+        </div>
+        <div class="xp-bar">
+          <div class="xp-fill" :style="{ width: `${Math.min(user?.level_progress_pct ?? 0, 100)}%` }" />
+        </div>
+        <p class="hint">
+          签到：+5 经验且 +10 积分；填卷 +10 经验；发卷 +30 经验。积分用于发卷消费，经验用于等级权益。
+          置顶折扣 {{ user?.pin_discount_pct ?? 100 }}% · 精准投放折扣 {{ user?.target_discount_pct ?? 100 }}% ·
+          本月免费置顶剩余 {{ user?.free_pin_remain ?? 0 }} 次
+        </p>
+      </div>
+
       <div class="profile-block stack">
         <div class="row" style="justify-content: space-between; align-items: center">
           <h2>个人信息</h2>
@@ -181,7 +229,7 @@ import { useRouter } from 'vue-router'
 import QRCode from 'qrcode'
 import { ACADEMIC_DISCIPLINES } from '@/constants/disciplines'
 import { CITY_TIERS, GENDERS, REGIONS } from '@/constants/profile'
-import { fetchMe, updateMe } from '@/services/auth'
+import { fetchMe, updateMe, checkIn } from '@/services/auth'
 import { listMyCompletions } from '@/services/survey'
 import { useUserStore } from '@/stores/user'
 import type { Completion } from '@/types/api'
@@ -189,10 +237,26 @@ import type { Completion } from '@/types/api'
 const router = useRouter()
 const userStore = useUserStore()
 const user = computed(() => userStore.userInfo)
+
+const banActive = computed(() => {
+  const until = user.value?.banned_until
+  if (!until) return false
+  const t = new Date(until).getTime()
+  return !Number.isNaN(t) && t > Date.now()
+})
+
+function formatBan(iso?: string | null) {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString()
+}
+
 const disciplines = ACADEMIC_DISCIPLINES
 const completions = ref<Completion[]>([])
 const loading = ref(false)
 const saving = ref(false)
+const checkingIn = ref(false)
 const editing = ref(false)
 const saveOk = ref(false)
 const error = ref('')
@@ -297,6 +361,18 @@ async function onSaveProfile() {
   }
 }
 
+async function onCheckIn() {
+  checkingIn.value = true
+  error.value = ''
+  try {
+    userStore.setUserInfo(await checkIn())
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '签到失败'
+  } finally {
+    checkingIn.value = false
+  }
+}
+
 async function copyLink() {
   const text = inviteUrl.value
   if (!text) return
@@ -346,5 +422,51 @@ onMounted(refresh)
   grid-template-columns: 72px 1fr;
   gap: 12px;
   align-items: baseline;
+}
+.level-box {
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(46, 125, 90, 0.08), rgba(46, 125, 90, 0.02));
+  border: 1px solid rgba(46, 125, 90, 0.15);
+}
+.xp-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.xp-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #2e7d5a;
+  transition: width 0.35s ease;
+}
+.mod-banner {
+  padding: 12px 14px;
+  border-radius: 12px;
+  line-height: 1.45;
+}
+.mod-banner strong {
+  display: block;
+  margin-bottom: 4px;
+}
+.mod-banner p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+.mod-banner .mod-note {
+  margin-top: 6px;
+  opacity: 0.85;
+  font-size: 0.85rem;
+}
+.mod-banner.warn {
+  background: #fff6e5;
+  color: #7a4d00;
+  border: 1px solid #f0d9a8;
+}
+.mod-banner.ban {
+  background: #fdecea;
+  color: #8a1f11;
+  border: 1px solid #f0b4aa;
 }
 </style>

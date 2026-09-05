@@ -13,6 +13,7 @@
       <button class="btn secondary" @click="load">刷新</button>
     </div>
     <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="reportMsg" class="hint">{{ reportMsg }}</p>
     <p v-if="loading" class="muted">加载中…</p>
 
     <template v-if="stats && !loading">
@@ -34,6 +35,7 @@
 
       <div class="stack">
         <h2>填写明细</h2>
+        <p class="hint">发布者主动举报后才会检查时长：远低于或远高于参考平均 → 警告；时长正常 → 举报无效、不警告。满 3 次封禁两周。</p>
         <p v-if="!stats.completions.length" class="muted">还没有人填写。</p>
         <div v-for="(row, idx) in stats.completions" :key="row.user_id + '-' + idx" class="survey-item">
           <div class="row" style="justify-content: space-between">
@@ -46,6 +48,16 @@
           <p class="muted">
             {{ row.school || '未填学校' }} · {{ formatTime(row.completed_at) }}
           </p>
+          <div class="row">
+            <button
+              class="btn ghost"
+              type="button"
+              :disabled="reportingId === row.user_id"
+              @click="onReport(row.user_id)"
+            >
+              {{ reportingId === row.user_id ? '处理中…' : '举报乱填' }}
+            </button>
+          </div>
         </div>
       </div>
     </template>
@@ -55,13 +67,34 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { getSurveyStats } from '@/services/survey'
+import { getSurveyStats, reportFiller } from '@/services/survey'
 import type { SurveyStats } from '@/types/api'
 
 const route = useRoute()
 const stats = ref<SurveyStats | null>(null)
 const loading = ref(false)
 const error = ref('')
+
+const reportingId = ref<number | null>(null)
+const reportMsg = ref('')
+
+async function onReport(userId: number) {
+  reportMsg.value = ''
+  reportingId.value = userId
+  try {
+    const id = Number(route.params.id)
+    const res = await reportFiller(id, userId)
+    if (res.banned) {
+      reportMsg.value = res.message || `已警告并封禁（警告 ${res.warn_count}/3）`
+    } else {
+      reportMsg.value = res.message || `举报生效，已警告（${res.warn_count}/3）`
+    }
+  } catch (e) {
+    reportMsg.value = e instanceof Error ? e.message : '举报失败'
+  } finally {
+    reportingId.value = null
+  }
+}
 
 const avgAway = computed(() => {
   if (!stats.value) return '-'

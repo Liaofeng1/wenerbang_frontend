@@ -1,4 +1,4 @@
-import { API_AUTH_LOGIN, API_AUTH_REGISTER, API_ME } from '@/constants/api'
+import { API_AUTH_LOGIN, API_AUTH_REGISTER, API_ME, API_ME_CHECKIN } from '@/constants/api'
 import { request } from '@/services/request'
 import type { AuthResult, UserInfo } from '@/types/api'
 
@@ -46,5 +46,12 @@ export function updateMe(payload: {
     url: API_ME,
     method: 'PATCH',
     data: payload,
+  })
+}
+
+export function checkIn() {
+  return request<UserInfo>({
+    url: API_ME_CHECKIN,
+    method: 'POST',
   })
 }

@@ -36,6 +36,11 @@
         无人填写前按此估算：大家平均约这么久填完，最高可获 {{ peakHint }} 积分。
       </p>
     </div>
+    <div class="field">
+      <label>多少天后下架（必填）</label>
+      <input v-model.number="shelfDays" type="number" min="1" max="60" step="1" />
+      <p class="hint">以天为单位，最少 1 天，最长 60 天。到期后问卷自动下架，大厅不再展示。</p>
+    </div>
 
     <div class="field">
       <label>额外激励（悬赏，可选）</label>
@@ -140,8 +145,15 @@
     <div class="cost-box">
       <div>基础发布：{{ publishCost }}</div>
       <div>悬赏奖池：{{ bountyCost }}</div>
-      <div>置顶：{{ pinCost }}</div>
-      <div>分类投放：{{ targetingCost }}</div>
+      <div>
+        置顶：{{ pinCost }}
+        <span v-if="pinHours > 0 && freePinRemain > 0" class="muted">（将使用 1 次免费置顶）</span>
+        <span v-else-if="pinDiscount < 100" class="muted">（Lv.{{ level }} {{ pinDiscount }}折）</span>
+      </div>
+      <div>
+        分类投放：{{ targetingCost }}
+        <span v-if="targetDiscount < 100" class="muted">（Lv.{{ level }} {{ targetDiscount }}折）</span>
+      </div>
       <strong>合计扣除：{{ totalCost }} 积分</strong>
     </div>
 
@@ -171,6 +183,7 @@ const description = ref('')
 const targetCount = ref(10)
 const minFillSeconds = ref(120)
 const expectedFillSeconds = ref(300)
+const shelfDays = ref(7)
 const bountyCount = ref(0)
 const bountyPer = ref(0)
 const pinHours = ref(0)
@@ -186,14 +199,27 @@ const error = ref('')
 
 const publishCost = 150
 const points = computed(() => userStore.userInfo?.points ?? 0)
+const level = computed(() => userStore.userInfo?.level ?? 1)
+const pinDiscount = computed(() => userStore.userInfo?.pin_discount_pct ?? 100)
+const targetDiscount = computed(() => userStore.userInfo?.target_discount_pct ?? 100)
+const freePinRemain = computed(() => userStore.userInfo?.free_pin_remain ?? 0)
 const bountyCost = computed(() => {
   const n = Number(bountyCount.value) || 0
   const p = Number(bountyPer.value) || 0
   if (n <= 0 || p <= 0) return 0
   return n * p
 })
-const pinCost = computed(() => (Number(pinHours.value) || 0) * 30)
-const targetingCost = computed(() => (Number(targetAudienceCount.value) || 0) * 5)
+const pinCost = computed(() => {
+  const hours = Number(pinHours.value) || 0
+  if (hours <= 0) return 0
+  if (freePinRemain.value > 0) return 0
+  const raw = hours * 30
+  return Math.floor((raw * pinDiscount.value) / 100)
+})
+const targetingCost = computed(() => {
+  const raw = (Number(targetAudienceCount.value) || 0) * 5
+  return Math.floor((raw * targetDiscount.value) / 100)
+})
 const totalCost = computed(() => publishCost + bountyCost.value + pinCost.value + targetingCost.value)
 const peakHint = computed(() => {
   const t = Number(expectedFillSeconds.value) || 0
@@ -226,6 +252,11 @@ onMounted(async () => {
 
 async function onSubmit() {
   error.value = ''
+  const shelf = Number(shelfDays.value) || 0
+  if (shelf < 1 || shelf > 60) {
+    error.value = '下架天数须为 1–60 天'
+    return
+  }
   const n = Number(bountyCount.value) || 0
   const p = Number(bountyPer.value) || 0
   if (n > 0 && (n < 50 || p < 10)) {
@@ -251,6 +282,7 @@ async function onSubmit() {
       target_count: Number(targetCount.value),
       min_fill_seconds: Number(minFillSeconds.value),
       expected_fill_seconds: Number(expectedFillSeconds.value),
+      shelf_days: Number(shelfDays.value) || 0,
       bounty_count: n,
       bounty_per: n > 0 ? p : 0,
       pin_hours: Number(pinHours.value) || 0,

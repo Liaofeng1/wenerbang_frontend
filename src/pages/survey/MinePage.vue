@@ -22,6 +22,7 @@
       <p class="muted">
         进度 {{ item.filled_count }}/{{ item.target_count }} · Tmin {{ item.min_fill_seconds || 120 }} 秒
       </p>
+      <p v-if="item.expires_at" class="muted">计划下架：{{ formatExpire(item.expires_at) }}（{{ item.shelf_days }} 天）</p>
       <p class="muted">{{ formatAudience(item) }}</p>
       <p class="reward-line">
         大家平均约 {{ avgText(item) }} 填完，最高可获 {{ item.estimated_reward || item.reward_points || 0 }} 积分
@@ -57,6 +58,13 @@ import type { Survey } from '@/types/api'
 const list = ref<Survey[]>([])
 const loading = ref(false)
 const error = ref('')
+
+function formatExpire(iso?: string | null) {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString()
+}
 
 function part(label: string, tags?: string[]) {
   if (!tags || tags.length === 0) return `${label}不限`

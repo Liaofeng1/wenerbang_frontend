@@ -10,6 +10,20 @@ export interface UserInfo {
   invite_code: string
   invited_by_id?: number | null
   points: number
+  warn_count?: number
+  banned_until?: string | null
+  exp?: number
+  level?: number
+  level_title?: string
+  exp_to_next?: number
+  next_level_exp?: number
+  level_progress_pct?: number
+  level_at_max?: boolean
+  checked_in_today?: boolean
+  free_pin_remain?: number
+  pin_discount_pct?: number
+  target_discount_pct?: number
+  last_check_in?: string
   created_at?: string
 }
 
@@ -40,6 +54,8 @@ export interface Survey {
   target_audience_count: number
   targeting_reached: number
   filled_count: number
+  shelf_days?: number
+  expires_at?: string | null
   status: 'open' | 'closed' | string
   target_genders?: string[]
   target_regions?: string[]
@@ -92,4 +108,15 @@ export interface SurveyStats {
 export interface ApiResponse<T> {
   data?: T
   error?: string
+}
+
+export interface ReportResult {
+  warned: boolean
+  reason?: string
+  warn_count: number
+  banned: boolean
+  banned_until?: string | null
+  away_seconds: number
+  ref_avg_seconds: number
+  message: string
 }
