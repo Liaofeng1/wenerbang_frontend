@@ -24,6 +24,51 @@
         <label>学校（可选）</label>
         <input v-model="school" placeholder="默认：中国人民大学" />
       </div>
+      <div class="field">
+        <label>性别（必选）</label>
+        <div class="chip-grid">
+          <button
+            v-for="g in GENDERS"
+            :key="g"
+            type="button"
+            class="chip"
+            :class="{ active: gender === g }"
+            @click="gender = g"
+          >
+            {{ g }}
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label>城市所在（南北方，必选）</label>
+        <div class="chip-grid">
+          <button
+            v-for="r in REGIONS"
+            :key="r"
+            type="button"
+            class="chip"
+            :class="{ active: region === r }"
+            @click="region = r"
+          >
+            {{ r }}
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label>城市线级（必选）</label>
+        <div class="chip-grid">
+          <button
+            v-for="t in CITY_TIERS"
+            :key="t"
+            type="button"
+            class="chip"
+            :class="{ active: cityTier === t }"
+            @click="cityTier = t"
+          >
+            {{ t }}
+          </button>
+        </div>
+      </div>
       <p v-if="error" class="error">{{ error }}</p>
       <button class="btn" :disabled="loading" @click="onSubmit">
         {{ loading ? '注册中…' : '注册并进入' }}
@@ -39,6 +84,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { CITY_TIERS, GENDERS, REGIONS } from '@/constants/profile'
 import { register } from '@/services/auth'
 import { useUserStore } from '@/stores/user'
 
@@ -50,6 +96,9 @@ const username = ref('')
 const password = ref('')
 const nickname = ref('')
 const school = ref('中国人民大学')
+const gender = ref('')
+const region = ref('')
+const cityTier = ref('')
 const inviteToken = ref('')
 const loading = ref(false)
 const error = ref('')
@@ -65,6 +114,10 @@ onMounted(() => {
 
 async function onSubmit() {
   error.value = ''
+  if (!gender.value || !region.value || !cityTier.value) {
+    error.value = '请完善性别、南北方与城市线级'
+    return
+  }
   loading.value = true
   try {
     const res = await register({
@@ -73,6 +126,9 @@ async function onSubmit() {
       nickname: nickname.value.trim(),
       school: school.value.trim(),
       invite_code: inviteToken.value,
+      gender: gender.value,
+      region: region.value,
+      city_tier: cityTier.value,
     })
     userStore.setAuth(res.token, res.user)
     await router.replace('/home')

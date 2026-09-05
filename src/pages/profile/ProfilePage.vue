@@ -5,8 +5,11 @@
         <div>
           <h1 class="hero-title">{{ user?.nickname || user?.username || '我的' }}</h1>
           <p class="muted">
-            {{ user?.school || '未填写学校' }} · @{{ user?.username }}
+            {{ user?.school || '未填写学校' }}
+            · {{ user?.gender || '未选性别' }}
+            · {{ user?.region || '未选南北' }}/{{ user?.city_tier || '未选线级' }}
           </p>
+          <p class="muted">@{{ user?.username }}</p>
         </div>
         <button class="btn ghost" @click="onLogout">退出登录</button>
       </div>

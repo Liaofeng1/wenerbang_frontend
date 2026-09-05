@@ -8,6 +8,9 @@ export function register(payload: {
   nickname?: string
   school?: string
   invite_code?: string
+  gender: string
+  region: string
+  city_tier: string
 }) {
   return request<AuthResult>({
     url: API_AUTH_REGISTER,

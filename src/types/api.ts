@@ -3,6 +3,9 @@ export interface UserInfo {
   username: string
   nickname: string
   school: string
+  gender?: string
+  region?: string
+  city_tier?: string
   invite_code: string
   invited_by_id?: number | null
   points: number
@@ -30,6 +33,9 @@ export interface Survey {
   frozen_bounty: number
   filled_count: number
   status: 'open' | 'closed' | string
+  target_genders?: string[]
+  target_regions?: string[]
+  target_city_tiers?: string[]
   created_at?: string
   publisher_nickname?: string
   avg_fill_seconds?: number
@@ -44,6 +50,32 @@ export interface Completion {
   away_seconds?: number
   created_at?: string
   survey_title?: string
+}
+
+export interface CompletionDetail {
+  user_id: number
+  nickname: string
+  gender: string
+  region: string
+  city_tier: string
+  school: string
+  away_seconds: number
+  completed_at: string
+}
+
+export interface SurveyStats {
+  survey_id: number
+  title: string
+  status: string
+  filled_count: number
+  target_count: number
+  min_fill_seconds: number
+  min_away_seconds: number
+  gender_counts: Record<string, number>
+  region_counts: Record<string, number>
+  city_tier_counts: Record<string, number>
+  avg_away_seconds: number
+  completions: CompletionDetail[]
 }
 
 export interface ApiResponse<T> {

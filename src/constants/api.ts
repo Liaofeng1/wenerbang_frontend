@@ -1,6 +1,7 @@
 export const API_AUTH_REGISTER = '/api/v1/auth/register'
 export const API_AUTH_LOGIN = '/api/v1/auth/login'
 export const API_ME = '/api/v1/me'
+export const API_PROFILE_OPTIONS = '/api/v1/meta/profile-options'
 export const API_SURVEYS = '/api/v1/surveys'
 export const API_SURVEYS_MINE = '/api/v1/surveys/mine'
 export const API_COMPLETIONS_MINE = '/api/v1/completions/mine'

@@ -3,7 +3,7 @@
     <div class="row" style="justify-content: space-between">
       <div>
         <h1 class="hero-title">我的问卷</h1>
-        <p class="muted">查看发布进度与状态</p>
+        <p class="muted">查看发布进度；结束后也可查看填写人画像与时长</p>
       </div>
       <button class="btn secondary" @click="load">刷新</button>
     </div>
@@ -19,13 +19,19 @@
       <p class="muted">
         进度 {{ item.filled_count }}/{{ item.target_count }} · Tmin {{ item.min_fill_seconds || 120 }} 秒
       </p>
+      <p class="muted">{{ formatAudience(item) }}</p>
       <p class="reward-line">
         大家平均约 {{ avgText(item) }} 填完，最高可获 {{ item.estimated_reward || item.reward_points || 0 }} 积分
       </p>
       <p v-if="item.bounty_count > 0" class="muted">
         悬赏 前 {{ item.bounty_count }} 份 × {{ item.bounty_per }}，剩余 {{ item.bounty_remain }} 份
       </p>
-      <a class="linkish" :href="item.link" target="_blank" rel="noopener">打开问卷链接</a>
+      <div class="row">
+        <a class="linkish" :href="item.link" target="_blank" rel="noopener">打开问卷链接</a>
+        <button class="btn ghost" @click="$router.push(`/survey/${item.id}/stats`)">
+          填写人统计
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -38,6 +44,19 @@ import type { Survey } from '@/types/api'
 const list = ref<Survey[]>([])
 const loading = ref(false)
 const error = ref('')
+
+function part(label: string, tags?: string[]) {
+  if (!tags || tags.length === 0) return `${label}不限`
+  return `${label}${tags.join('、')}`
+}
+
+function formatAudience(item: Survey) {
+  return [
+    part('性别：', item.target_genders),
+    part('南北：', item.target_regions),
+    part('线级：', item.target_city_tiers),
+  ].join(' · ')
+}
 
 function avgText(item: Survey) {
   const s = item.avg_fill_seconds || item.expected_fill_seconds || 300

@@ -3,7 +3,9 @@
     <div>
       <h1 class="hero-title">发布问卷</h1>
       <p class="muted">
-        发布免费。填写奖励由平台按停留时长结算；若设置前 n 份悬赏，将从你的余额冻结对应积分并转移给填写者。
+        每次发布固定消耗
+        <strong>{{ cost }}</strong>
+        积分；填写奖励由平台按停留时长结算。若设置前 n 份悬赏，将额外从余额冻结对应积分并转移给填写者。
       </p>
       <p class="muted">当前余额：{{ points }}</p>
     </div>
@@ -46,10 +48,62 @@
         <input v-model.number="bountyPer" type="number" min="0" />
       </div>
     </div>
-    <p v-if="freeze > 0" class="muted">将冻结悬赏 {{ freeze }} 积分，未用完的会在问卷结束后退回。</p>
+    <p class="muted">
+      本次将扣除发布费 {{ cost }} 积分
+      <span v-if="freeze > 0">，并冻结悬赏 {{ freeze }} 积分（未用完的会在问卷结束后退回）</span>
+      ，合计 {{ totalNeed }}。
+    </p>
+    <div class="field">
+      <label>面向性别</label>
+      <p class="muted" style="font-size: 0.85rem">不选表示不限</p>
+      <div class="chip-grid">
+        <button
+          v-for="g in GENDERS"
+          :key="g"
+          type="button"
+          class="chip"
+          :class="{ active: genders.includes(g) }"
+          @click="toggleGenders(g)"
+        >
+          {{ g }}
+        </button>
+      </div>
+    </div>
+    <div class="field">
+      <label>面向南北方</label>
+      <p class="muted" style="font-size: 0.85rem">不选表示不限</p>
+      <div class="chip-grid">
+        <button
+          v-for="r in REGIONS"
+          :key="r"
+          type="button"
+          class="chip"
+          :class="{ active: regions.includes(r) }"
+          @click="toggleRegions(r)"
+        >
+          {{ r }}
+        </button>
+      </div>
+    </div>
+    <div class="field">
+      <label>面向城市线级</label>
+      <p class="muted" style="font-size: 0.85rem">不选表示不限</p>
+      <div class="chip-grid">
+        <button
+          v-for="t in CITY_TIERS"
+          :key="t"
+          type="button"
+          class="chip"
+          :class="{ active: cityTiers.includes(t) }"
+          @click="toggleCityTiers(t)"
+        >
+          {{ t }}
+        </button>
+      </div>
+    </div>
     <p v-if="error" class="error">{{ error }}</p>
     <button class="btn" :disabled="loading" @click="onSubmit">
-      {{ loading ? '发布中…' : freeze > 0 ? `发布并冻结 ${freeze} 积分` : '发布问卷' }}
+      {{ loading ? '发布中…' : `发布并扣除 ${totalNeed} 积分` }}
     </button>
   </div>
 </template>
@@ -57,6 +111,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { CITY_TIERS, GENDERS, REGIONS } from '@/constants/profile'
 import { createSurvey } from '@/services/survey'
 import { fetchMe } from '@/services/auth'
 import { useUserStore } from '@/stores/user'
@@ -72,16 +127,39 @@ const minFillSeconds = ref(120)
 const expectedFillSeconds = ref(300)
 const bountyCount = ref(0)
 const bountyPer = ref(0)
+const genders = ref<string[]>([])
+const regions = ref<string[]>([])
+const cityTiers = ref<string[]>([])
 const loading = ref(false)
 const error = ref('')
 
+function flip(list: { value: string[] }, tag: string) {
+  if (list.value.includes(tag)) {
+    list.value = list.value.filter((t) => t !== tag)
+  } else {
+    list.value = [...list.value, tag]
+  }
+}
+
+function toggleGenders(tag: string) {
+  flip(genders, tag)
+}
+function toggleRegions(tag: string) {
+  flip(regions, tag)
+}
+function toggleCityTiers(tag: string) {
+  flip(cityTiers, tag)
+}
+
 const points = computed(() => userStore.userInfo?.points ?? 0)
+const cost = 5
 const freeze = computed(() => {
   const n = Number(bountyCount.value) || 0
   const p = Number(bountyPer.value) || 0
   if (n <= 0 || p <= 0) return 0
   return n * p
 })
+const totalNeed = computed(() => cost + freeze.value)
 const peakHint = computed(() => {
   const t = Number(expectedFillSeconds.value) || 0
   if (t <= 0) return 0
@@ -109,6 +187,9 @@ async function onSubmit() {
       expected_fill_seconds: Number(expectedFillSeconds.value),
       bounty_count: Number(bountyCount.value) || 0,
       bounty_per: Number(bountyPer.value) || 0,
+      target_genders: genders.value,
+      target_regions: regions.value,
+      target_city_tiers: cityTiers.value,
     })
     userStore.setUserInfo(await fetchMe())
     await router.push('/survey/mine')

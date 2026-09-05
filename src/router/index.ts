@@ -36,6 +36,11 @@ const router = createRouter({
       component: () => import('@/pages/survey/MinePage.vue'),
     },
     {
+      path: '/survey/:id/stats',
+      name: 'survey-stats',
+      component: () => import('@/pages/survey/StatsPage.vue'),
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/pages/profile/ProfilePage.vue'),

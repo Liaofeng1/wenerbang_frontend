@@ -21,6 +21,7 @@
           {{ item.publisher_nickname || '同学' }} · 进度 {{ item.filled_count }}/{{ item.target_count }}
           · Tmin {{ item.min_fill_seconds || 120 }} 秒
         </p>
+        <p class="muted">{{ formatAudience(item) }}</p>
         <p v-if="item.bounty_remain > 0" class="muted">
           前 {{ item.bounty_remain }} 份另有悬赏 +{{ item.bounty_per }}（发布者转移）
         </p>
@@ -79,6 +80,19 @@ const error = ref('')
 const completingId = ref<number | null>(null)
 const openingId = ref<number | null>(null)
 const myId = computed(() => userStore.userInfo?.id)
+
+function part(label: string, tags?: string[]) {
+  if (!tags || tags.length === 0) return `${label}不限`
+  return `${label}${tags.join('、')}`
+}
+
+function formatAudience(item: Survey) {
+  return [
+    part('性别：', item.target_genders),
+    part('南北：', item.target_regions),
+    part('线级：', item.target_city_tiers),
+  ].join(' · ')
+}
 
 const tracking = reactive<
   Record<

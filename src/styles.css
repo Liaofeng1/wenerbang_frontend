@@ -169,6 +169,13 @@ p {
   font-weight: 600;
 }
 
+.chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .btn {
   border: none;
   border-radius: 12px;
