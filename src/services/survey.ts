@@ -17,6 +17,7 @@ export function createSurvey(payload: {
   description?: string
   target_count: number
   reward_points: number
+  target_degrees: string[]
 }) {
   return request<Survey>({
     url: API_SURVEYS,

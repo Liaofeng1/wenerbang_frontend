@@ -4,7 +4,11 @@
       <div class="row" style="justify-content: space-between">
         <div>
           <h1 class="hero-title">{{ user?.nickname || user?.username || '我的' }}</h1>
-          <p class="muted">{{ user?.school || '未填写学校' }} · @{{ user?.username }}</p>
+          <p class="muted">
+            {{ user?.school || '未填写学校' }}
+            · {{ user?.degree_tag || '未选学位' }}
+            · @{{ user?.username }}
+          </p>
         </div>
         <button class="btn ghost" @click="onLogout">退出登录</button>
       </div>

@@ -20,6 +20,9 @@
         <p class="muted">
           {{ item.publisher_nickname || '同学' }} · 进度 {{ item.filled_count }}/{{ item.target_count }}
         </p>
+        <p class="muted">
+          面向：{{ formatTargets(item.target_degrees) }}
+        </p>
         <p v-if="item.description">{{ item.description }}</p>
         <p v-if="item.publisher_id !== myId" class="muted">
           {{ statusText(item.id) }}
@@ -76,6 +79,11 @@ const completingId = ref<number | null>(null)
 const openingId = ref<number | null>(null)
 const myId = computed(() => userStore.userInfo?.id)
 const minAwaySeconds = ref(30)
+
+function formatTargets(tags?: string[]) {
+  if (!tags || tags.length === 0) return '不限学位'
+  return tags.join('、')
+}
 
 /** Local UI state for leave/return timing per survey */
 const tracking = reactive<

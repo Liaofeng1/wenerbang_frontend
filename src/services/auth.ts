@@ -7,6 +7,7 @@ export function register(payload: {
   password: string
   nickname?: string
   school?: string
+  degree_tag: string
 }) {
   return request<AuthResult>({
     url: API_AUTH_REGISTER,

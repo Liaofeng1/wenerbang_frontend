@@ -19,6 +19,7 @@
       <p class="muted">
         进度 {{ item.filled_count }}/{{ item.target_count }} · 每份 +{{ item.reward_points }} 分
       </p>
+      <p class="muted">面向：{{ formatTargets(item.target_degrees) }}</p>
       <a class="linkish" :href="item.link" target="_blank" rel="noopener">打开问卷链接</a>
     </div>
   </div>
@@ -32,6 +33,11 @@ import type { Survey } from '@/types/api'
 const list = ref<Survey[]>([])
 const loading = ref(false)
 const error = ref('')
+
+function formatTargets(tags?: string[]) {
+  if (!tags || tags.length === 0) return '不限学位'
+  return tags.join('、')
+}
 
 async function load() {
   loading.value = true
