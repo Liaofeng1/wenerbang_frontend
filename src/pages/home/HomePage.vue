@@ -4,28 +4,29 @@
       <div class="row" style="justify-content: space-between">
         <div>
           <h1 class="hero-title">问卷大厅</h1>
-          <p class="muted">
-            填写他人问卷赚积分。需离开本站填写满 {{ minAwaySeconds }} 秒后才能提交，防止秒填。
-          </p>
+          <p class="muted">填写认真、时长合理的样本积分更高；未达发布者设定的最低停留时间不能提交。</p>
         </div>
         <button class="btn secondary" @click="load">刷新</button>
       </div>
       <p v-if="error" class="error">{{ error }}</p>
       <p v-if="!loading && !list.length" class="muted">暂时没有进行中的问卷，去发布第一份吧。</p>
       <div v-for="item in list" :key="item.id" class="survey-item">
-        <div class="row" style="justify-content: space-between">
+        <div>
           <strong>{{ item.title }}</strong>
-          <span class="badge">+{{ item.reward_points }} 积分</span>
+          <p class="reward-line">
+            大家平均约 {{ avgText(item) }} 填完，最高可获 {{ peakOf(item) }} 积分
+          </p>
         </div>
         <p class="muted">
           {{ item.publisher_nickname || '同学' }} · 进度 {{ item.filled_count }}/{{ item.target_count }}
+          · Tmin {{ item.min_fill_seconds || 120 }} 秒
         </p>
-        <p class="muted">
-          面向：{{ formatTargets(item.target_degrees) }}
+        <p v-if="item.bounty_remain > 0" class="muted">
+          前 {{ item.bounty_remain }} 份另有悬赏 +{{ item.bounty_per }}（发布者转移）
         </p>
         <p v-if="item.description">{{ item.description }}</p>
         <p v-if="item.publisher_id !== myId" class="muted">
-          {{ statusText(item.id) }}
+          {{ statusText(item) }}
         </p>
         <div class="row">
           <button
@@ -78,14 +79,7 @@ const error = ref('')
 const completingId = ref<number | null>(null)
 const openingId = ref<number | null>(null)
 const myId = computed(() => userStore.userInfo?.id)
-const minAwaySeconds = ref(30)
 
-function formatTargets(tags?: string[]) {
-  if (!tags || tags.length === 0) return '不限学位'
-  return tags.join('、')
-}
-
-/** Local UI state for leave/return timing per survey */
 const tracking = reactive<
   Record<
     number,
@@ -94,6 +88,7 @@ const tracking = reactive<
       awaySeconds: number
       ready: boolean
       away: boolean
+      minAway: number
     }
   >
 >({})
@@ -101,9 +96,36 @@ const tracking = reactive<
 let activeSurveyId: number | null = null
 let pollTimer: number | null = null
 
-function ensureTrack(id: number) {
+function peakOf(item: Survey) {
+  return item.estimated_reward || item.reward_points || 0
+}
+
+function avgSeconds(item: Survey) {
+  return item.avg_fill_seconds || item.expected_fill_seconds || 300
+}
+
+function avgText(item: Survey) {
+  const s = avgSeconds(item)
+  if (s < 60) return `${s} 秒`
+  const minutes = Math.round((s / 60) * 10) / 10
+  return Number.isInteger(minutes) ? `${minutes} 分钟` : `${minutes} 分钟`
+}
+
+function minOf(item: Survey) {
+  return tracking[item.id]?.minAway || item.min_fill_seconds || 120
+}
+
+function ensureTrack(id: number, minAway?: number) {
   if (!tracking[id]) {
-    tracking[id] = { started: false, awaySeconds: 0, ready: false, away: false }
+    tracking[id] = {
+      started: false,
+      awaySeconds: 0,
+      ready: false,
+      away: false,
+      minAway: minAway || 120,
+    }
+  } else if (minAway) {
+    tracking[id].minAway = minAway
   }
   return tracking[id]
 }
@@ -113,12 +135,13 @@ function canComplete(id: number) {
   return Boolean(t?.started && t.ready)
 }
 
-function statusText(id: number) {
-  const t = tracking[id]
-  if (!t?.started) return `请先打开问卷，离开本页填写满 ${minAwaySeconds.value} 秒`
-  if (t.away) return `填写中…已离开 ${t.awaySeconds} 秒（需满 ${minAwaySeconds.value} 秒）`
-  if (t.ready) return `已离开累计 ${t.awaySeconds} 秒，可以提交`
-  return `已离开累计 ${t.awaySeconds} / ${minAwaySeconds.value} 秒，请继续填写`
+function statusText(item: Survey) {
+  const t = tracking[item.id]
+  const min = minOf(item)
+  if (!t?.started) return `请先打开问卷，离开本页填写满 ${min} 秒`
+  if (t.away) return `填写中…已离开 ${t.awaySeconds} 秒（需满 ${min} 秒）`
+  if (t.ready) return `已离开累计 ${t.awaySeconds} 秒，可以提交；积分按认真程度结算`
+  return `已离开累计 ${t.awaySeconds} / ${min} 秒，请继续填写`
 }
 
 async function load() {
@@ -141,14 +164,13 @@ async function onOpen(item: Survey) {
   error.value = ''
   try {
     const session = await startSurvey(item.id)
-    minAwaySeconds.value = session.min_away_seconds
-    const t = ensureTrack(item.id)
+    const t = ensureTrack(item.id, session.min_away_seconds)
     t.started = true
     t.awaySeconds = session.away_seconds
     t.ready = session.ready
+    t.minAway = session.min_away_seconds
     activeSurveyId = item.id
     window.open(item.link, '_blank', 'noopener,noreferrer')
-    // If browser already hid this page, record leave soon.
     if (document.visibilityState === 'hidden') {
       await markLeave(item.id)
     }
@@ -162,12 +184,12 @@ async function onOpen(item: Survey) {
 async function markLeave(id: number) {
   try {
     const session = await leaveSurvey(id)
-    minAwaySeconds.value = session.min_away_seconds
-    const t = ensureTrack(id)
+    const t = ensureTrack(id, session.min_away_seconds)
     t.started = true
     t.away = true
     t.awaySeconds = session.away_seconds
     t.ready = session.ready
+    t.minAway = session.min_away_seconds
     startPolling(id)
   } catch {
     /* ignore transient */
@@ -178,12 +200,12 @@ async function markReturn(id: number) {
   stopPolling()
   try {
     const session = await returnSurvey(id)
-    minAwaySeconds.value = session.min_away_seconds
-    const t = ensureTrack(id)
+    const t = ensureTrack(id, session.min_away_seconds)
     t.started = true
     t.away = false
     t.awaySeconds = session.away_seconds
     t.ready = session.ready
+    t.minAway = session.min_away_seconds
   } catch (e) {
     error.value = e instanceof Error ? e.message : '回站同步失败'
   }
@@ -195,7 +217,7 @@ function startPolling(id: number) {
     const t = tracking[id]
     if (!t?.away) return
     t.awaySeconds += 1
-    t.ready = t.awaySeconds >= minAwaySeconds.value
+    t.ready = t.awaySeconds >= t.minAway
   }, 1000)
 }
 
@@ -220,7 +242,6 @@ async function onComplete(id: number) {
   completingId.value = id
   error.value = ''
   try {
-    // If still marked away, close interval first.
     if (tracking[id]?.away) {
       await markReturn(id)
     }

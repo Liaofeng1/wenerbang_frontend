@@ -19,7 +19,7 @@
       </button>
       <p class="muted">
         还没有账号？
-        <button class="linkish" @click="$router.push('/register')">去注册（送 20 积分）</button>
+        <button class="linkish" @click="$router.push('/register')">去注册（送 30 积分）</button>
       </p>
     </div>
   </div>

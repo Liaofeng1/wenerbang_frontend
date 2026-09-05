@@ -17,9 +17,14 @@
         </span>
       </div>
       <p class="muted">
-        进度 {{ item.filled_count }}/{{ item.target_count }} · 每份 +{{ item.reward_points }} 分
+        进度 {{ item.filled_count }}/{{ item.target_count }} · Tmin {{ item.min_fill_seconds || 120 }} 秒
       </p>
-      <p class="muted">面向：{{ formatTargets(item.target_degrees) }}</p>
+      <p class="reward-line">
+        大家平均约 {{ avgText(item) }} 填完，最高可获 {{ item.estimated_reward || item.reward_points || 0 }} 积分
+      </p>
+      <p v-if="item.bounty_count > 0" class="muted">
+        悬赏 前 {{ item.bounty_count }} 份 × {{ item.bounty_per }}，剩余 {{ item.bounty_remain }} 份
+      </p>
       <a class="linkish" :href="item.link" target="_blank" rel="noopener">打开问卷链接</a>
     </div>
   </div>
@@ -34,9 +39,11 @@ const list = ref<Survey[]>([])
 const loading = ref(false)
 const error = ref('')
 
-function formatTargets(tags?: string[]) {
-  if (!tags || tags.length === 0) return '不限学位'
-  return tags.join('、')
+function avgText(item: Survey) {
+  const s = item.avg_fill_seconds || item.expected_fill_seconds || 300
+  if (s < 60) return `${s} 秒`
+  const minutes = Math.round((s / 60) * 10) / 10
+  return `${minutes} 分钟`
 }
 
 async function load() {

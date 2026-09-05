@@ -3,7 +3,10 @@
     <div class="card auth-card stack">
       <div>
         <h1 class="hero-title">注册问而帮</h1>
-        <p class="muted">新用户赠送 20 积分，每次发布问卷消耗 5 积分</p>
+        <p class="muted">完善资料后赠送 30 积分</p>
+        <p v-if="fromInvite" class="invite-banner">
+          你正在通过好友邀请注册，成功后双方各再得 50 积分
+        </p>
       </div>
       <div class="field">
         <label>用户名</label>
@@ -19,23 +22,7 @@
       </div>
       <div class="field">
         <label>学校（可选）</label>
-        <input v-model="school" placeholder="如：中国人民大学" />
-      </div>
-      <div class="field">
-        <label>学位类别（必选）</label>
-        <p class="muted" style="font-size: 0.85rem">学术型学科门类，不区分本硕博</p>
-        <div class="chip-grid">
-          <button
-            v-for="tag in DEGREE_TAGS"
-            :key="tag"
-            type="button"
-            class="chip"
-            :class="{ active: degreeTag === tag }"
-            @click="degreeTag = tag"
-          >
-            {{ tag }}
-          </button>
-        </div>
+        <input v-model="school" placeholder="默认：中国人民大学" />
       </div>
       <p v-if="error" class="error">{{ error }}</p>
       <button class="btn" :disabled="loading" @click="onSubmit">
@@ -50,29 +37,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { DEGREE_TAGS } from '@/constants/degrees'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { register } from '@/services/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const username = ref('')
 const password = ref('')
 const nickname = ref('')
-const school = ref('')
-const degreeTag = ref('')
+const school = ref('中国人民大学')
+const inviteToken = ref('')
 const loading = ref(false)
 const error = ref('')
 
+const fromInvite = computed(() => Boolean(inviteToken.value))
+
+onMounted(() => {
+  const q = route.query.invite
+  if (typeof q === 'string' && q.trim()) {
+    inviteToken.value = q.trim()
+  }
+})
+
 async function onSubmit() {
   error.value = ''
-  if (!degreeTag.value) {
-    error.value = '请选择学位类别'
-    return
-  }
   loading.value = true
   try {
     const res = await register({
@@ -80,7 +72,7 @@ async function onSubmit() {
       password: password.value,
       nickname: nickname.value.trim(),
       school: school.value.trim(),
-      degree_tag: degreeTag.value,
+      invite_code: inviteToken.value,
     })
     userStore.setAuth(res.token, res.user)
     await router.replace('/home')

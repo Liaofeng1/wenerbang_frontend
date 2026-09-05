@@ -16,8 +16,10 @@ export function createSurvey(payload: {
   link: string
   description?: string
   target_count: number
-  reward_points: number
-  target_degrees: string[]
+  min_fill_seconds: number
+  expected_fill_seconds: number
+  bounty_count: number
+  bounty_per: number
 }) {
   return request<Survey>({
     url: API_SURVEYS,

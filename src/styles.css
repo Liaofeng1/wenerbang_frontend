@@ -122,12 +122,51 @@ p {
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 12px 14px;
   background: #fff;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.chip input {
+  width: auto;
+  margin: 0;
+}
+
+.chip:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .btn {
@@ -173,6 +212,13 @@ p {
   font-size: 0.85rem;
 }
 
+.reward-line {
+  margin: 4px 0 0;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .badge.closed {
   background: #f3f3f3;
   color: #666;
@@ -207,7 +253,60 @@ p {
 }
 
 .auth-card {
-  width: min(520px, 100%);
+  width: min(420px, 100%);
+}
+
+.invite-box {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+}
+
+.invite-code {
+  font-size: 1.4rem;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.qr-wrap {
+  display: grid;
+  place-items: center;
+  padding: 12px 0 4px;
+}
+
+.qr-img {
+  width: 220px;
+  height: 220px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.qr-placeholder {
+  width: 220px;
+  height: 220px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  border: 1px dashed var(--line);
+  background: #fff;
+}
+
+.invite-banner {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.invite-box code {
+  font-size: 0.85em;
 }
 
 .linkish {
@@ -216,26 +315,4 @@ p {
   background: none;
   border: none;
   padding: 0;
-}
-
-.chip-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.chip {
-  border: 1px solid var(--line);
-  background: #fff;
-  color: var(--muted);
-  border-radius: 999px;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.chip.active {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 600;
 }
