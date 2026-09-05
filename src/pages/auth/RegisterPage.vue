@@ -25,6 +25,14 @@
         <input v-model="school" placeholder="默认：中国人民大学" />
       </div>
       <div class="field">
+        <label>专业（学科门类，可选）</label>
+        <select v-model="major">
+          <option value="">不填</option>
+          <option v-for="d in disciplines" :key="d" :value="d">{{ d }}</option>
+        </select>
+        <p class="hint">与分类投放一致：哲学、经济学、法学…共 13 个门类</p>
+      </div>
+      <div class="field">
         <label>性别（必选）</label>
         <div class="chip-grid">
           <button
@@ -84,6 +92,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ACADEMIC_DISCIPLINES } from '@/constants/disciplines'
 import { CITY_TIERS, GENDERS, REGIONS } from '@/constants/profile'
 import { register } from '@/services/auth'
 import { useUserStore } from '@/stores/user'
@@ -91,11 +100,13 @@ import { useUserStore } from '@/stores/user'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const disciplines = ACADEMIC_DISCIPLINES
 
 const username = ref('')
 const password = ref('')
 const nickname = ref('')
 const school = ref('中国人民大学')
+const major = ref('')
 const gender = ref('')
 const region = ref('')
 const cityTier = ref('')
@@ -125,10 +136,11 @@ async function onSubmit() {
       password: password.value,
       nickname: nickname.value.trim(),
       school: school.value.trim(),
-      invite_code: inviteToken.value,
+      major: major.value.trim(),
       gender: gender.value,
       region: region.value,
       city_tier: cityTier.value,
+      invite_code: inviteToken.value,
     })
     userStore.setAuth(res.token, res.user)
     await router.replace('/home')

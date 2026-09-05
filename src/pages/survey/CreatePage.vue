@@ -3,9 +3,7 @@
     <div>
       <h1 class="hero-title">发布问卷</h1>
       <p class="muted">
-        每次发布固定消耗
-        <strong>{{ cost }}</strong>
-        积分；填写奖励由平台按停留时长结算。若设置前 n 份悬赏，将额外从余额冻结对应积分并转移给填写者。
+        基础发布费 150 积分（沉没成本）。可选悬赏 / 置顶 / 分类投放；填写奖励仍由平台按时长结算。
       </p>
       <p class="muted">当前余额：{{ points }}</p>
     </div>
@@ -35,75 +33,121 @@
       <label>预计填写时长（秒）</label>
       <input v-model.number="expectedFillSeconds" type="number" min="10" />
       <p class="hint">
-        无人填写前按此估算：大家平均约这么久填完，最高可获 {{ peakHint }} 积分（真实平均会随填写动态更新）。
+        无人填写前按此估算：大家平均约这么久填完，最高可获 {{ peakHint }} 积分。
       </p>
     </div>
-    <div class="row">
-      <div class="field" style="flex: 1">
-        <label>前 n 份悬赏（可 0）</label>
-        <input v-model.number="bountyCount" type="number" min="0" />
-      </div>
-      <div class="field" style="flex: 1">
-        <label>每份悬赏积分</label>
-        <input v-model.number="bountyPer" type="number" min="0" />
+
+    <div class="field">
+      <label>额外激励（悬赏，可选）</label>
+      <p class="hint">开启后：至少前 50 份、每份至少 10 积分；奖池未用完期间自动置顶，用完取消。</p>
+      <div class="row">
+        <div class="field" style="flex: 1">
+          <label>前 n 份（0=不设）</label>
+          <input v-model.number="bountyCount" type="number" min="0" step="1" />
+        </div>
+        <div class="field" style="flex: 1">
+          <label>每份悬赏积分</label>
+          <input v-model.number="bountyPer" type="number" min="0" step="1" />
+        </div>
       </div>
     </div>
-    <p class="muted">
-      本次将扣除发布费 {{ cost }} 积分
-      <span v-if="freeze > 0">，并冻结悬赏 {{ freeze }} 积分（未用完的会在问卷结束后退回）</span>
-      ，合计 {{ totalNeed }}。
-    </p>
+
     <div class="field">
-      <label>面向性别</label>
-      <p class="muted" style="font-size: 0.85rem">不选表示不限</p>
-      <div class="chip-grid">
+      <label>购买置顶</label>
+      <p class="hint">30 积分 / 小时，可选 4 / 6 / 8 小时（与悬赏置顶可叠加）。</p>
+      <div class="row">
         <button
-          v-for="g in GENDERS"
-          :key="g"
+          v-for="h in pinOptions"
+          :key="h"
           type="button"
           class="chip"
-          :class="{ active: genders.includes(g) }"
-          @click="toggleGenders(g)"
+          :class="{ active: pinHours === h }"
+          @click="pinHours = h"
         >
-          {{ g }}
+          {{ h === 0 ? '不置顶' : `${h}h · ${h * 30} 分` }}
         </button>
       </div>
     </div>
+
     <div class="field">
-      <label>面向南北方</label>
-      <p class="muted" style="font-size: 0.85rem">不选表示不限</p>
-      <div class="chip-grid">
-        <button
-          v-for="r in REGIONS"
-          :key="r"
-          type="button"
-          class="chip"
-          :class="{ active: regions.includes(r) }"
-          @click="toggleRegions(r)"
-        >
-          {{ r }}
-        </button>
+      <label>分类投放（可选）</label>
+      <p class="hint">按学校 / 学科门类 / 性别定向；费用 = 要求人数 × 5；投放给画像匹配用户，上限为要求人数的 200%。</p>
+      <div class="row">
+        <div class="field" style="flex: 1">
+          <label>目标学校</label>
+          <input v-model="targetSchool" placeholder="如：中国人民大学" />
+        </div>
+        <div class="field" style="flex: 1">
+          <label>目标专业（学科门类）</label>
+          <select v-model="targetMajor">
+            <option value="">不限</option>
+            <option v-for="d in disciplines" :key="d" :value="d">{{ d }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex: 1">
+          <label>目标性别</label>
+          <select v-model="targetGender">
+            <option value="">不限</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="field" style="flex: 1">
+          <label>要求投放人数</label>
+          <input v-model.number="targetAudienceCount" type="number" min="0" />
+        </div>
       </div>
     </div>
+
     <div class="field">
-      <label>面向城市线级</label>
-      <p class="muted" style="font-size: 0.85rem">不选表示不限</p>
-      <div class="chip-grid">
-        <button
-          v-for="t in CITY_TIERS"
-          :key="t"
-          type="button"
-          class="chip"
-          :class="{ active: cityTiers.includes(t) }"
-          @click="toggleCityTiers(t)"
-        >
-          {{ t }}
-        </button>
+      <label>城市定向（可选）</label>
+      <p class="muted" style="font-size: 0.85rem">不选表示不限；与分类投放可同时使用</p>
+      <div class="field">
+        <label>面向南北方</label>
+        <div class="chip-grid">
+          <button
+            v-for="r in REGIONS"
+            :key="r"
+            type="button"
+            class="chip"
+            :class="{ active: regions.includes(r) }"
+            @click="toggleRegions(r)"
+          >
+            {{ r }}
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label>面向城市线级</label>
+        <div class="chip-grid">
+          <button
+            v-for="t in CITY_TIERS"
+            :key="t"
+            type="button"
+            class="chip"
+            :class="{ active: cityTiers.includes(t) }"
+            @click="toggleCityTiers(t)"
+          >
+            {{ t }}
+          </button>
+        </div>
       </div>
     </div>
+
+    <div class="cost-box">
+      <div>基础发布：{{ publishCost }}</div>
+      <div>悬赏奖池：{{ bountyCost }}</div>
+      <div>置顶：{{ pinCost }}</div>
+      <div>分类投放：{{ targetingCost }}</div>
+      <strong>合计扣除：{{ totalCost }} 积分</strong>
+    </div>
+
     <p v-if="error" class="error">{{ error }}</p>
-    <button class="btn" :disabled="loading" @click="onSubmit">
-      {{ loading ? '发布中…' : `发布并扣除 ${totalNeed} 积分` }}
+    <button class="btn" :disabled="loading || totalCost > points" @click="onSubmit">
+      {{ loading ? '发布中…' : `发布并扣除 ${totalCost} 积分` }}
     </button>
   </div>
 </template>
@@ -111,13 +155,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { CITY_TIERS, GENDERS, REGIONS } from '@/constants/profile'
+import { ACADEMIC_DISCIPLINES } from '@/constants/disciplines'
+import { CITY_TIERS, REGIONS } from '@/constants/profile'
 import { createSurvey } from '@/services/survey'
 import { fetchMe } from '@/services/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
+const disciplines = ACADEMIC_DISCIPLINES
 
 const title = ref('')
 const link = ref('')
@@ -127,11 +173,33 @@ const minFillSeconds = ref(120)
 const expectedFillSeconds = ref(300)
 const bountyCount = ref(0)
 const bountyPer = ref(0)
-const genders = ref<string[]>([])
+const pinHours = ref(0)
+const pinOptions = [0, 4, 6, 8]
+const targetSchool = ref('')
+const targetMajor = ref('')
+const targetGender = ref('')
+const targetAudienceCount = ref(0)
 const regions = ref<string[]>([])
 const cityTiers = ref<string[]>([])
 const loading = ref(false)
 const error = ref('')
+
+const publishCost = 150
+const points = computed(() => userStore.userInfo?.points ?? 0)
+const bountyCost = computed(() => {
+  const n = Number(bountyCount.value) || 0
+  const p = Number(bountyPer.value) || 0
+  if (n <= 0 || p <= 0) return 0
+  return n * p
+})
+const pinCost = computed(() => (Number(pinHours.value) || 0) * 30)
+const targetingCost = computed(() => (Number(targetAudienceCount.value) || 0) * 5)
+const totalCost = computed(() => publishCost + bountyCost.value + pinCost.value + targetingCost.value)
+const peakHint = computed(() => {
+  const t = Number(expectedFillSeconds.value) || 0
+  if (t <= 0) return 0
+  return Math.round((10 * t) / 60)
+})
 
 function flip(list: { value: string[] }, tag: string) {
   if (list.value.includes(tag)) {
@@ -141,30 +209,12 @@ function flip(list: { value: string[] }, tag: string) {
   }
 }
 
-function toggleGenders(tag: string) {
-  flip(genders, tag)
-}
 function toggleRegions(tag: string) {
   flip(regions, tag)
 }
 function toggleCityTiers(tag: string) {
   flip(cityTiers, tag)
 }
-
-const points = computed(() => userStore.userInfo?.points ?? 0)
-const cost = 5
-const freeze = computed(() => {
-  const n = Number(bountyCount.value) || 0
-  const p = Number(bountyPer.value) || 0
-  if (n <= 0 || p <= 0) return 0
-  return n * p
-})
-const totalNeed = computed(() => cost + freeze.value)
-const peakHint = computed(() => {
-  const t = Number(expectedFillSeconds.value) || 0
-  if (t <= 0) return 0
-  return Math.round((10 * t) / 60)
-})
 
 onMounted(async () => {
   try {
@@ -176,6 +226,22 @@ onMounted(async () => {
 
 async function onSubmit() {
   error.value = ''
+  const n = Number(bountyCount.value) || 0
+  const p = Number(bountyPer.value) || 0
+  if (n > 0 && (n < 50 || p < 10)) {
+    error.value = '悬赏需至少前 50 份，且每份至少 10 积分'
+    return
+  }
+  const hasFilter = Boolean(targetSchool.value.trim() || targetMajor.value.trim() || targetGender.value)
+  const aud = Number(targetAudienceCount.value) || 0
+  if (hasFilter && aud <= 0) {
+    error.value = '开启分类投放时请填写要求投放人数'
+    return
+  }
+  if (aud > 0 && !hasFilter) {
+    error.value = '分类投放请至少填写学校 / 专业 / 性别之一'
+    return
+  }
   loading.value = true
   try {
     await createSurvey({
@@ -185,9 +251,14 @@ async function onSubmit() {
       target_count: Number(targetCount.value),
       min_fill_seconds: Number(minFillSeconds.value),
       expected_fill_seconds: Number(expectedFillSeconds.value),
-      bounty_count: Number(bountyCount.value) || 0,
-      bounty_per: Number(bountyPer.value) || 0,
-      target_genders: genders.value,
+      bounty_count: n,
+      bounty_per: n > 0 ? p : 0,
+      pin_hours: Number(pinHours.value) || 0,
+      target_school: targetSchool.value.trim(),
+      target_major: targetMajor.value.trim(),
+      target_gender: targetGender.value.trim(),
+      target_audience_count: aud,
+      target_genders: targetGender.value.trim() ? [targetGender.value.trim()] : [],
       target_regions: regions.value,
       target_city_tiers: cityTiers.value,
     })
@@ -200,3 +271,29 @@ async function onSubmit() {
   }
 }
 </script>
+
+<style scoped>
+.chip {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.chip.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.cost-box {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+</style>

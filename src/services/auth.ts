@@ -7,10 +7,11 @@ export function register(payload: {
   password: string
   nickname?: string
   school?: string
-  invite_code?: string
+  major?: string
   gender: string
   region: string
   city_tier: string
+  invite_code?: string
 }) {
   return request<AuthResult>({
     url: API_AUTH_REGISTER,
@@ -31,4 +32,19 @@ export function login(payload: { username: string; password: string }) {
 
 export function fetchMe() {
   return request<UserInfo>({ url: API_ME })
+}
+
+export function updateMe(payload: {
+  nickname: string
+  school: string
+  major: string
+  gender: string
+  region?: string
+  city_tier?: string
+}) {
+  return request<UserInfo>({
+    url: API_ME,
+    method: 'PATCH',
+    data: payload,
+  })
 }

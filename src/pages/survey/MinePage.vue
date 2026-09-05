@@ -11,7 +11,10 @@
     <p v-if="!loading && !list.length" class="muted">你还没有发布过问卷。</p>
     <div v-for="item in list" :key="item.id" class="survey-item">
       <div class="row" style="justify-content: space-between">
-        <strong>{{ item.title }}</strong>
+        <strong>
+          <span v-if="item.is_pinned" class="pin-tag">置顶</span>
+          {{ item.title }}
+        </strong>
         <span class="badge" :class="{ closed: item.status !== 'open' }">
           {{ item.status === 'open' ? '进行中' : '已结束' }}
         </span>
@@ -25,6 +28,16 @@
       </p>
       <p v-if="item.bounty_count > 0" class="muted">
         悬赏 前 {{ item.bounty_count }} 份 × {{ item.bounty_per }}，剩余 {{ item.bounty_remain }} 份
+        <template v-if="item.pin_by_bounty"> · 奖池置顶中</template>
+      </p>
+      <p v-if="item.pin_by_paid" class="muted">付费置顶 {{ item.pin_hours }}h，至 {{ formatPin(item.pin_until) }}</p>
+      <p v-if="item.target_audience_count > 0" class="muted">
+        定向 {{ item.target_audience_count }} 人（×5 积分）· 已触达 {{ item.targeting_reached }}/{{
+          item.target_audience_count * 2
+        }}
+        <template v-if="item.target_school"> · {{ item.target_school }}</template>
+        <template v-if="item.target_major"> · {{ item.target_major }}</template>
+        <template v-if="item.target_gender"> · {{ item.target_gender }}</template>
       </p>
       <div class="row">
         <a class="linkish" :href="item.link" target="_blank" rel="noopener">打开问卷链接</a>
@@ -63,6 +76,13 @@ function avgText(item: Survey) {
   if (s < 60) return `${s} 秒`
   const minutes = Math.round((s / 60) * 10) / 10
   return `${minutes} 分钟`
+}
+
+function formatPin(iso?: string | null) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString()
 }
 
 async function load() {

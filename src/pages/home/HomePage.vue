@@ -12,7 +12,10 @@
       <p v-if="!loading && !list.length" class="muted">暂时没有进行中的问卷，去发布第一份吧。</p>
       <div v-for="item in list" :key="item.id" class="survey-item">
         <div>
-          <strong>{{ item.title }}</strong>
+          <strong>
+            <span v-if="item.is_pinned" class="pin-tag">置顶</span>
+            {{ item.title }}
+          </strong>
           <p class="reward-line">
             大家平均约 {{ avgText(item) }} 填完，最高可获 {{ peakOf(item) }} 积分
           </p>
@@ -22,8 +25,19 @@
           · Tmin {{ item.min_fill_seconds || 120 }} 秒
         </p>
         <p class="muted">{{ formatAudience(item) }}</p>
+        <p v-if="item.is_pinned" class="muted">
+          <template v-if="item.pin_by_bounty">悬赏奖池未用完，自动置顶</template>
+          <template v-if="item.pin_by_bounty && item.pin_by_paid"> · </template>
+          <template v-if="item.pin_by_paid">付费置顶至 {{ formatPinUntil(item.pin_until) }}</template>
+        </p>
         <p v-if="item.bounty_remain > 0" class="muted">
           前 {{ item.bounty_remain }} 份另有悬赏 +{{ item.bounty_per }}（发布者转移）
+        </p>
+        <p v-if="item.target_audience_count > 0" class="muted">
+          定向投放
+          <template v-if="item.target_school"> · {{ item.target_school }}</template>
+          <template v-if="item.target_major"> · {{ item.target_major }}</template>
+          <template v-if="item.target_gender"> · {{ item.target_gender }}</template>
         </p>
         <p v-if="item.description">{{ item.description }}</p>
         <p v-if="item.publisher_id !== myId" class="muted">
@@ -122,7 +136,14 @@ function avgText(item: Survey) {
   const s = avgSeconds(item)
   if (s < 60) return `${s} 秒`
   const minutes = Math.round((s / 60) * 10) / 10
-  return Number.isInteger(minutes) ? `${minutes} 分钟` : `${minutes} 分钟`
+  return `${minutes} 分钟`
+}
+
+function formatPinUntil(iso?: string | null) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString()
 }
 
 function minOf(item: Survey) {

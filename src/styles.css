@@ -226,6 +226,18 @@ p {
   font-weight: 600;
 }
 
+.pin-tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
 .badge.closed {
   background: #f3f3f3;
   color: #666;

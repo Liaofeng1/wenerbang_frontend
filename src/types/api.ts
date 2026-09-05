@@ -3,6 +3,7 @@ export interface UserInfo {
   username: string
   nickname: string
   school: string
+  major?: string
   gender?: string
   region?: string
   city_tier?: string
@@ -31,6 +32,13 @@ export interface Survey {
   bounty_per: number
   bounty_remain: number
   frozen_bounty: number
+  pin_hours: number
+  pin_until?: string | null
+  target_school: string
+  target_major: string
+  target_gender: string
+  target_audience_count: number
+  targeting_reached: number
   filled_count: number
   status: 'open' | 'closed' | string
   target_genders?: string[]
@@ -40,6 +48,9 @@ export interface Survey {
   publisher_nickname?: string
   avg_fill_seconds?: number
   estimated_reward?: number
+  is_pinned?: boolean
+  pin_by_bounty?: boolean
+  pin_by_paid?: boolean
 }
 
 export interface Completion {

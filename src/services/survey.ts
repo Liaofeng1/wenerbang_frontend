@@ -20,6 +20,11 @@ export function createSurvey(payload: {
   expected_fill_seconds: number
   bounty_count: number
   bounty_per: number
+  pin_hours: number
+  target_school: string
+  target_major: string
+  target_gender: string
+  target_audience_count: number
   target_genders?: string[]
   target_regions?: string[]
   target_city_tiers?: string[]
