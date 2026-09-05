@@ -45,6 +45,15 @@
         <button class="btn ghost" @click="$router.push(`/survey/${item.id}/stats`)">
           填写人统计
         </button>
+        <button
+          v-if="item.status === 'open'"
+          class="btn ghost"
+          type="button"
+          :disabled="stoppingId === item.id"
+          @click="onStop(item)"
+        >
+          {{ stoppingId === item.id ? '停止中…' : '停止问卷' }}
+        </button>
       </div>
     </div>
   </div>
@@ -52,12 +61,13 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { listMySurveys } from '@/services/survey'
+import { closeSurvey, listMySurveys } from '@/services/survey'
 import type { Survey } from '@/types/api'
 
 const list = ref<Survey[]>([])
 const loading = ref(false)
 const error = ref('')
+const stoppingId = ref<number | null>(null)
 
 function formatExpire(iso?: string | null) {
   if (!iso) return '-'
@@ -102,6 +112,28 @@ async function load() {
     error.value = e instanceof Error ? e.message : '加载失败'
   } finally {
     loading.value = false
+  }
+}
+
+async function onStop(item: Survey) {
+  if (item.status !== 'open') return
+  if (!window.confirm(`确定停止「${item.title}」？停止后大厅不再展示，未发出的悬赏积分将退回。`)) {
+    return
+  }
+  stoppingId.value = item.id
+  error.value = ''
+  try {
+    const updated = await closeSurvey(item.id)
+    const idx = list.value.findIndex((s) => s.id === item.id)
+    if (idx >= 0) {
+      list.value[idx] = updated
+    } else {
+      await load()
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '停止失败'
+  } finally {
+    stoppingId.value = null
   }
 }
 

@@ -53,6 +53,12 @@ router.beforeEach((to) => {
   if (!to.meta.public && !userStore.token) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
+  // Invite links must land on the register page (not home), even if a session exists.
+  const inviteQ = to.query.invite
+  const hasInvite = typeof inviteQ === 'string' ? Boolean(inviteQ.trim()) : Array.isArray(inviteQ)
+  if (to.name === 'register' && hasInvite) {
+    return true
+  }
   if ((to.name === 'login' || to.name === 'register') && userStore.token) {
     return { name: 'home' }
   }

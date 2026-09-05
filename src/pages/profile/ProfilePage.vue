@@ -180,7 +180,7 @@
       <div class="invite-box">
         <div class="muted">我的邀请链接</div>
         <p class="hint">
-          分享链接或让好友扫码，打开后直接进入注册页；对方注册成功，你们各得 50 积分（对方另有注册赠送 30）。
+          分享下方链接或让好友扫码。对方打开后会进入「邀请注册」页；注册成功后你们各得 50 积分（对方另有注册赠送 30）。
         </p>
 
         <div class="qr-wrap">
@@ -190,17 +190,32 @@
 
         <div class="field">
           <label>分享用网站地址（手机扫码请填电脑局域网 IP）</label>
-          <input v-model="shareBase" placeholder="例如 http://192.168.1.8:5173" @change="rebuildQr" @blur="rebuildQr" />
+          <input
+            v-model="shareBase"
+            placeholder="例如 http://192.168.1.8:5173"
+            @change="rebuildQr"
+            @blur="rebuildQr"
+          />
         </div>
 
         <div class="field">
-          <label>邀请链接</label>
-          <input :value="inviteUrl" readonly />
+          <label>邀请链接（点击可打开邀请注册页）</label>
+          <a
+            v-if="inviteUrl"
+            class="invite-link"
+            :href="inviteUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{{ inviteUrl }}</a>
+          <p v-else class="muted">加载中…</p>
         </div>
 
         <div class="row">
           <button class="btn" type="button" :disabled="!inviteUrl" @click="copyLink">
-            {{ copied ? '已复制链接' : '复制邀请链接' }}
+            {{ copied ? '已复制 ✓' : '一键复制邀请链接' }}
+          </button>
+          <button class="btn secondary" type="button" :disabled="!inviteUrl" @click="openInviteRegister">
+            打开邀请注册页
           </button>
         </div>
         <p class="hint">
@@ -376,20 +391,50 @@ async function onCheckIn() {
 async function copyLink() {
   const text = inviteUrl.value
   if (!text) return
+  let done = false
   try {
-    await navigator.clipboard.writeText(text)
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      done = true
+    }
   } catch {
-    const input = document.createElement('input')
+    /* fallback below */
+  }
+  if (!done) {
+    const input = document.createElement('textarea')
     input.value = text
+    input.setAttribute('readonly', 'true')
+    input.style.position = 'fixed'
+    input.style.left = '-9999px'
     document.body.appendChild(input)
     input.select()
-    document.execCommand('copy')
+    input.setSelectionRange(0, text.length)
+    try {
+      done = document.execCommand('copy')
+    } catch {
+      done = false
+    }
     document.body.removeChild(input)
+  }
+  if (!done) {
+    error.value = '复制失败，请长按链接手动复制'
+    return
   }
   copied.value = true
   window.setTimeout(() => {
     copied.value = false
   }, 1500)
+}
+
+function openInviteRegister() {
+  const code = user.value?.invite_code
+  if (!code) return
+  // Same-origin preview via router so invite landing always works
+  const resolved = router.resolve({
+    name: 'register',
+    query: { invite: code },
+  })
+  window.open(resolved.href, '_blank', 'noopener,noreferrer')
 }
 
 function onLogout() {

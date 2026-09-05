@@ -11,6 +11,13 @@ export function listMySurveys() {
   return request<Survey[]>({ url: API_SURVEYS_MINE })
 }
 
+export function closeSurvey(id: number) {
+  return request<Survey>({
+    url: `${API_SURVEYS}/${id}/close`,
+    method: 'POST',
+  })
+}
+
 export function createSurvey(payload: {
   title: string
   link: string

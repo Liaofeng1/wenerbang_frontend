@@ -328,6 +328,15 @@ p {
   font-size: 0.85em;
 }
 
+.invite-link {
+  display: block;
+  word-break: break-all;
+  color: var(--accent);
+  font-weight: 600;
+  line-height: 1.4;
+  text-decoration: underline;
+}
+
 .linkish {
   color: var(--accent);
   cursor: pointer;
