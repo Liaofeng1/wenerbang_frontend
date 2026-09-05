@@ -13,7 +13,7 @@
       <button class="btn secondary" @click="load">刷新</button>
     </div>
     <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="reportMsg" class="hint">{{ reportMsg }}</p>
+    <p v-if="reportMsg" :class="reportOk ? 'report-ok' : 'error'">{{ reportMsg }}</p>
     <p v-if="loading" class="muted">加载中…</p>
 
     <template v-if="stats && !loading">
@@ -39,7 +39,13 @@
         <p v-if="!stats.completions.length" class="muted">还没有人填写。</p>
         <div v-for="(row, idx) in stats.completions" :key="row.user_id + '-' + idx" class="survey-item">
           <div class="row" style="justify-content: space-between">
-            <strong>{{ row.nickname || `用户 #${row.user_id}` }}</strong>
+            <div>
+              <strong>{{ displayName(row) }}</strong>
+              <p class="muted" style="margin: 2px 0 0">
+                用户名 {{ row.username || '-' }}
+                <template v-if="row.nickname"> · 昵称 {{ row.nickname }}</template>
+              </p>
+            </div>
             <span class="badge">离开 {{ row.away_seconds }} 秒</span>
           </div>
           <p class="muted">
@@ -77,19 +83,23 @@ const error = ref('')
 
 const reportingId = ref<number | null>(null)
 const reportMsg = ref('')
+const reportOk = ref(false)
 
 async function onReport(userId: number) {
   reportMsg.value = ''
+  reportOk.value = false
   reportingId.value = userId
   try {
     const id = Number(route.params.id)
     const res = await reportFiller(id, userId)
+    reportOk.value = true
     if (res.banned) {
       reportMsg.value = res.message || `已警告并封禁（警告 ${res.warn_count}/3）`
     } else {
       reportMsg.value = res.message || `举报生效，已警告（${res.warn_count}/3）`
     }
   } catch (e) {
+    reportOk.value = false
     reportMsg.value = e instanceof Error ? e.message : '举报失败'
   } finally {
     reportingId.value = null
@@ -113,6 +123,10 @@ function formatTime(iso?: string) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   return d.toLocaleString()
+}
+
+function displayName(row: { nickname?: string; username?: string; user_id: number }) {
+  return row.nickname || row.username || `用户 #${row.user_id}`
 }
 
 async function load() {
@@ -139,5 +153,12 @@ onMounted(load)
 h2 {
   margin: 8px 0 0;
   font-size: 1.05rem;
+}
+.report-ok {
+  color: var(--accent, #2e7d5a);
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(46, 125, 90, 0.08);
 }
 </style>

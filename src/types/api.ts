@@ -81,6 +81,7 @@ export interface Completion {
 
 export interface CompletionDetail {
   user_id: number
+  username: string
   nickname: string
   gender: string
   region: string

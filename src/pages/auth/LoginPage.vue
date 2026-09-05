@@ -1,9 +1,12 @@
 <template>
   <div class="auth-wrap">
     <div class="card auth-card stack">
-      <div>
-        <h1 class="hero-title">登录问而帮</h1>
-        <p class="muted">用积分互助，把问卷发到真正愿意填的人手里</p>
+      <div class="auth-brand">
+        <AppLogo size="lg" />
+        <div>
+          <h1 class="hero-title">登录问而帮</h1>
+          <p class="muted">用积分互助，把问卷发到真正愿意填的人手里</p>
+        </div>
       </div>
       <div class="field">
         <label>用户名</label>
@@ -28,6 +31,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AppLogo from '@/components/AppLogo.vue'
 import { login } from '@/services/auth'
 import { useUserStore } from '@/stores/user'
 

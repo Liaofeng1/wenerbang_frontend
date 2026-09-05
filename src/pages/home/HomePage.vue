@@ -1,10 +1,13 @@
 <template>
   <div class="stack">
     <div class="card stack">
-      <div class="row" style="justify-content: space-between">
-        <div>
-          <h1 class="hero-title">问卷大厅</h1>
-          <p class="muted">填写认真、时长合理的样本积分更高；未达发布者设定的最低停留时间不能提交。</p>
+      <div class="row" style="justify-content: space-between; align-items: flex-start">
+        <div class="home-brand">
+          <AppLogo size="md" />
+          <div>
+            <h1 class="hero-title">问卷大厅</h1>
+            <p class="muted">填写认真、时长合理的样本积分更高；未达发布者设定的最低停留时间不能提交。</p>
+          </div>
         </div>
         <button class="btn secondary" @click="load">刷新</button>
       </div>
@@ -76,6 +79,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import AppLogo from '@/components/AppLogo.vue'
 import {
   completeSurvey,
   leaveSurvey,
