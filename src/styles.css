@@ -207,7 +207,7 @@ p {
 }
 
 .auth-card {
-  width: min(420px, 100%);
+  width: min(520px, 100%);
 }
 
 .linkish {
@@ -216,4 +216,26 @@ p {
   background: none;
   border: none;
   padding: 0;
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
 }

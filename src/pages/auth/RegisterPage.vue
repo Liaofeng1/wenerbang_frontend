@@ -21,6 +21,22 @@
         <label>学校（可选）</label>
         <input v-model="school" placeholder="如：中国人民大学" />
       </div>
+      <div class="field">
+        <label>学位类别（必选）</label>
+        <p class="muted" style="font-size: 0.85rem">学术型学科门类，不区分本硕博</p>
+        <div class="chip-grid">
+          <button
+            v-for="tag in DEGREE_TAGS"
+            :key="tag"
+            type="button"
+            class="chip"
+            :class="{ active: degreeTag === tag }"
+            @click="degreeTag = tag"
+          >
+            {{ tag }}
+          </button>
+        </div>
+      </div>
       <p v-if="error" class="error">{{ error }}</p>
       <button class="btn" :disabled="loading" @click="onSubmit">
         {{ loading ? '注册中…' : '注册并进入' }}
@@ -36,6 +52,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { DEGREE_TAGS } from '@/constants/degrees'
 import { register } from '@/services/auth'
 import { useUserStore } from '@/stores/user'
 
@@ -46,11 +63,16 @@ const username = ref('')
 const password = ref('')
 const nickname = ref('')
 const school = ref('')
+const degreeTag = ref('')
 const loading = ref(false)
 const error = ref('')
 
 async function onSubmit() {
   error.value = ''
+  if (!degreeTag.value) {
+    error.value = '请选择学位类别'
+    return
+  }
   loading.value = true
   try {
     const res = await register({
@@ -58,6 +80,7 @@ async function onSubmit() {
       password: password.value,
       nickname: nickname.value.trim(),
       school: school.value.trim(),
+      degree_tag: degreeTag.value,
     })
     userStore.setAuth(res.token, res.user)
     await router.replace('/home')

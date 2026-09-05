@@ -3,6 +3,7 @@ export interface UserInfo {
   username: string
   nickname: string
   school: string
+  degree_tag: string
   points: number
   created_at?: string
 }
@@ -22,6 +23,7 @@ export interface Survey {
   reward_points: number
   filled_count: number
   status: 'open' | 'closed' | string
+  target_degrees?: string[]
   created_at?: string
   publisher_nickname?: string
 }
