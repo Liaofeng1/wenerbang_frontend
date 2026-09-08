@@ -30,10 +30,10 @@
           <input v-model="email" type="email" placeholder="your@email.com" class="grow" />
           <button
             class="btn btn-sm"
-            :disabled="codeSending || !email"
+            :disabled="codeSending || !email || countdown > 0"
             @click="onSendCode"
           >
-            {{ codeSending ? '发送中…' : codeSent ? '重新发送' : '发送验证码' }}
+            {{ codeSending ? '发送中…' : countdown > 0 ? `${countdown}秒后重新发送` : codeSent ? '重新发送' : '发送验证码' }}
           </button>
         </div>
       </div>
@@ -50,7 +50,7 @@
             {{ codeVerifying ? '验证中…' : codeVerified ? '已验证 ✓' : '验证' }}
           </button>
         </div>
-        <p v-if="codeSent" class="hint">验证码已发送至 {{ email }}，请查收（开发环境请查看控制台输出）</p>
+        <p v-if="codeSent" class="hint">验证码已发送至 {{ email }}，请查收</p>
       </div>
       <div class="field">
         <label>昵称（可选）</label>
@@ -126,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLogo from '@/components/AppLogo.vue'
 import { ACADEMIC_DISCIPLINES } from '@/constants/disciplines'
@@ -147,6 +147,8 @@ const codeSending = ref(false)
 const codeSent = ref(false)
 const codeVerifying = ref(false)
 const codeVerified = ref(false)
+const countdown = ref(0)
+let cooldownTimer: ReturnType<typeof setInterval> | null = null
 const nickname = ref('')
 const school = ref('中国人民大学')
 const major = ref('')
@@ -176,6 +178,42 @@ function logoutThenStay() {
 onMounted(syncInviteFromRoute)
 watch(() => route.query.invite, syncInviteFromRoute)
 
+// 邮箱变更时重置验证状态
+watch(email, () => {
+  codeVerified.value = false
+  codeSent.value = false
+  code.value = ''
+  countdown.value = 0
+  if (cooldownTimer !== null) {
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
+})
+
+onUnmounted(() => {
+  if (cooldownTimer !== null) {
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
+})
+
+function startCooldown(seconds: number) {
+  countdown.value = seconds
+  if (cooldownTimer !== null) {
+    clearInterval(cooldownTimer)
+  }
+  cooldownTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      countdown.value = 0
+      if (cooldownTimer !== null) {
+        clearInterval(cooldownTimer)
+        cooldownTimer = null
+      }
+    }
+  }, 1000)
+}
+
 async function onSendCode() {
   error.value = ''
   if (!email.value.trim()) {
@@ -193,6 +231,7 @@ async function onSendCode() {
     codeVerified.value = false
     code.value = ''
     error.value = ''
+    startCooldown(60)
   } catch (e) {
     error.value = e instanceof Error ? e.message : '发送失败'
   } finally {
