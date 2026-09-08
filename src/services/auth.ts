@@ -1,4 +1,4 @@
-import { API_AUTH_LOGIN, API_AUTH_REGISTER, API_AUTH_SEND_CODE, API_AUTH_VERIFY_CODE, API_ME, API_ME_CHECKIN } from '@/constants/api'
+import { API_AUTH_LOGIN, API_AUTH_REGISTER, API_AUTH_SEND_CODE, API_AUTH_VERIFY_CODE, API_ME, API_ME_BIND_EMAIL, API_ME_CHECKIN } from '@/constants/api'
 import { request } from '@/services/request'
 import type { AuthResult, UserInfo } from '@/types/api'
 
@@ -72,5 +72,13 @@ export function checkIn() {
   return request<UserInfo>({
     url: API_ME_CHECKIN,
     method: 'POST',
+  })
+}
+
+export function bindEmail(email: string) {
+  return request<UserInfo>({
+    url: API_ME_BIND_EMAIL,
+    method: 'POST',
+    data: { email },
   })
 }
