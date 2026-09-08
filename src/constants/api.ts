@@ -1,5 +1,7 @@
 export const API_AUTH_REGISTER = '/api/v1/auth/register'
 export const API_AUTH_LOGIN = '/api/v1/auth/login'
+export const API_AUTH_SEND_CODE = '/api/v1/auth/send-code'
+export const API_AUTH_VERIFY_CODE = '/api/v1/auth/verify-code'
 export const API_ME = '/api/v1/me'
 export const API_ME_CHECKIN = '/api/v1/me/checkin'
 export const API_PROFILE_OPTIONS = '/api/v1/meta/profile-options'
