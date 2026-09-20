@@ -21,6 +21,12 @@ const router = createRouter({
       meta: { hideNav: true, public: true },
     },
     {
+      path: '/bind-email',
+      name: 'bind-email',
+      component: () => import('@/pages/auth/BindEmailPage.vue'),
+      meta: { hideNav: true },
+    },
+    {
       path: '/home',
       name: 'home',
       component: () => import('@/pages/home/HomePage.vue'),
@@ -48,11 +54,37 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const userStore = useUserStore()
+
   if (!to.meta.public && !userStore.token) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
+
+  // Load user info if needed (e.g., page refresh)
+  if (userStore.token && !userStore.userInfo) {
+    try {
+      const { fetchMe } = await import('@/services/auth')
+      const user = await fetchMe()
+      userStore.setUserInfo(user)
+    } catch {
+      userStore.logout()
+      return { name: 'login' }
+    }
+  }
+
+  // Force email binding for users without email
+  if (
+    userStore.token &&
+    userStore.userInfo &&
+    !userStore.userInfo.email &&
+    to.name !== 'bind-email' &&
+    to.name !== 'login' &&
+    to.name !== 'register'
+  ) {
+    return { name: 'bind-email' }
+  }
+
   // Invite links must land on the register page (not home), even if a session exists.
   const inviteQ = to.query.invite
   const hasInvite = typeof inviteQ === 'string' ? Boolean(inviteQ.trim()) : Array.isArray(inviteQ)

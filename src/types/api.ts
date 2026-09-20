@@ -1,6 +1,8 @@
 export interface UserInfo {
   id: number
   username: string
+  email?: string
+  email_verified?: boolean
   nickname: string
   school: string
   major?: string

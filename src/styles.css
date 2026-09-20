@@ -207,6 +207,23 @@ p {
   font-weight: 600;
 }
 
+.btn.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.btn.verified {
+  background: var(--accent-soft);
+  color: var(--accent);
+  cursor: default;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;

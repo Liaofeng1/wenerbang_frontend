@@ -1,4 +1,4 @@
-<template>
+ <template>
   <div class="auth-wrap">
     <div class="card auth-card stack">
       <div class="auth-brand">
@@ -23,6 +23,34 @@
       <div class="field">
         <label>密码（至少 4 位）</label>
         <input v-model="password" type="password" autocomplete="new-password" />
+      </div>
+      <div class="field">
+        <label>邮箱（必填，用于验证）</label>
+        <div class="row">
+          <input v-model="email" type="email" placeholder="your@email.com" class="grow" />
+          <button
+            class="btn btn-sm"
+            :disabled="codeSending || !email || countdown > 0"
+            @click="onSendCode"
+          >
+            {{ codeSending ? '发送中…' : countdown > 0 ? `${countdown}秒后重新发送` : codeSent ? '重新发送' : '发送验证码' }}
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label>邮箱验证码</label>
+        <div class="row">
+          <input v-model="code" placeholder="请输入6位验证码" class="grow" maxlength="6" />
+          <button
+            class="btn btn-sm"
+            :class="{ verified: codeVerified }"
+            :disabled="codeVerifying || !code || codeVerified"
+            @click="onVerifyCode"
+          >
+            {{ codeVerifying ? '验证中…' : codeVerified ? '已验证 ✓' : '验证' }}
+          </button>
+        </div>
+        <p v-if="codeSent" class="hint">验证码已发送至 {{ email }}，请查收</p>
       </div>
       <div class="field">
         <label>昵称（可选）</label>
@@ -98,12 +126,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLogo from '@/components/AppLogo.vue'
 import { ACADEMIC_DISCIPLINES } from '@/constants/disciplines'
 import { CITY_TIERS, GENDERS, REGIONS } from '@/constants/profile'
-import { register } from '@/services/auth'
+import { register, sendEmailCode, verifyEmailCode } from '@/services/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -113,6 +141,14 @@ const disciplines = ACADEMIC_DISCIPLINES
 
 const username = ref('')
 const password = ref('')
+const email = ref('')
+const code = ref('')
+const codeSending = ref(false)
+const codeSent = ref(false)
+const codeVerifying = ref(false)
+const codeVerified = ref(false)
+const countdown = ref(0)
+let cooldownTimer: ReturnType<typeof setInterval> | null = null
 const nickname = ref('')
 const school = ref('中国人民大学')
 const major = ref('')
@@ -142,8 +178,95 @@ function logoutThenStay() {
 onMounted(syncInviteFromRoute)
 watch(() => route.query.invite, syncInviteFromRoute)
 
+// 邮箱变更时重置验证状态
+watch(email, () => {
+  codeVerified.value = false
+  codeSent.value = false
+  code.value = ''
+  countdown.value = 0
+  if (cooldownTimer !== null) {
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
+})
+
+onUnmounted(() => {
+  if (cooldownTimer !== null) {
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
+})
+
+function startCooldown(seconds: number) {
+  countdown.value = seconds
+  if (cooldownTimer !== null) {
+    clearInterval(cooldownTimer)
+  }
+  cooldownTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      countdown.value = 0
+      if (cooldownTimer !== null) {
+        clearInterval(cooldownTimer)
+        cooldownTimer = null
+      }
+    }
+  }, 1000)
+}
+
+async function onSendCode() {
+  error.value = ''
+  if (!email.value.trim()) {
+    error.value = '请输入邮箱地址'
+    return
+  }
+  if (!email.value.includes('@') || !email.value.includes('.')) {
+    error.value = '邮箱格式不正确'
+    return
+  }
+  codeSending.value = true
+  try {
+    await sendEmailCode(email.value.trim())
+    codeSent.value = true
+    codeVerified.value = false
+    code.value = ''
+    error.value = ''
+    startCooldown(60)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '发送失败'
+  } finally {
+    codeSending.value = false
+  }
+}
+
+async function onVerifyCode() {
+  error.value = ''
+  if (!code.value.trim()) {
+    error.value = '请输入验证码'
+    return
+  }
+  codeVerifying.value = true
+  try {
+    await verifyEmailCode(email.value.trim(), code.value.trim())
+    codeVerified.value = true
+    error.value = ''
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '验证失败'
+  } finally {
+    codeVerifying.value = false
+  }
+}
+
 async function onSubmit() {
   error.value = ''
+  if (!email.value.trim()) {
+    error.value = '请输入邮箱'
+    return
+  }
+  if (!codeVerified.value) {
+    error.value = '请先完成邮箱验证'
+    return
+  }
   if (!major.value) {
     error.value = '请选择专业学科门类'
     return
@@ -157,6 +280,7 @@ async function onSubmit() {
     const res = await register({
       username: username.value.trim(),
       password: password.value,
+      email: email.value.trim(),
       nickname: nickname.value.trim(),
       school: school.value.trim(),
       major: major.value.trim(),
