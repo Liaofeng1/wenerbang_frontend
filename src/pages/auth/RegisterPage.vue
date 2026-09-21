@@ -5,9 +5,9 @@
         <AppLogo size="lg" />
         <div>
           <h1 class="hero-title">{{ fromInvite ? '好友邀请你注册问而帮' : '注册问而帮' }}</h1>
-          <p class="muted">{{ fromInvite ? '通过邀请链接注册，完善资料即可加入' : '完善资料后赠送 30 积分' }}</p>
+          <p class="muted">{{ fromInvite ? '通过邀请链接注册，完善资料即可加入' : '完善资料后赠送 150 积分' }}</p>
           <p v-if="fromInvite" class="invite-banner">
-            邀请码已自动带入。注册成功后双方各得 50 积分，你还会额外获得注册赠送 30 积分。
+            邀请码已自动带入。注册成功后双方各得 50 积分，你还会额外获得注册赠送 150 积分。
           </p>
           <p v-if="fromInvite && alreadyLoggedIn" class="hint">
             当前浏览器已登录其他账号。若要使用邀请注册新账号，请先
