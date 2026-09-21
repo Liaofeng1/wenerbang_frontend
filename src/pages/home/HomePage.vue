@@ -1,6 +1,18 @@
 <template>
-  <div class="stack">
-    <div class="card stack">
+  <div class="home-layout">
+    <aside class="home-sidebar">
+      <div class="card sidebar-card stack">
+        <h3 style="margin: 0 0 4px">📢 通知</h3>
+        <p v-if="!notifications.length" class="muted">暂无通知</p>
+        <div v-for="n in notifications" :key="n.id" class="notif-item">
+          <strong>{{ n.title }}</strong>
+          <p class="muted" style="font-size: 0.8rem; margin: 2px 0 4px">{{ n.date }}</p>
+          <p style="margin: 0; line-height: 1.6">{{ n.content }}</p>
+        </div>
+      </div>
+    </aside>
+    <div class="home-main">
+      <div class="card stack">
       <div class="row" style="justify-content: space-between; align-items: flex-start">
         <div class="home-brand">
           <AppLogo size="md" />
@@ -75,6 +87,7 @@
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -89,6 +102,7 @@ import {
 } from '@/services/survey'
 import { fetchMe } from '@/services/auth'
 import { useUserStore } from '@/stores/user'
+import { notifications } from '@/constants/notifications'
 import type { Survey } from '@/types/api'
 
 const userStore = useUserStore()

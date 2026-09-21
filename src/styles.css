@@ -382,3 +382,42 @@ p {
   border: none;
   padding: 0;
 }
+
+/* home layout */
+.home-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.home-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+}
+
+.sidebar-card {
+  padding: 16px;
+}
+
+.notif-item + .notif-item {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 700px) {
+  .home-layout {
+    flex-direction: column;
+  }
+  .home-sidebar {
+    width: 100%;
+    position: static;
+  }
+}
